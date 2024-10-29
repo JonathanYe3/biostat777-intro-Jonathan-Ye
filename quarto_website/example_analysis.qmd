@@ -1,0 +1,27 @@
+---
+title: "Example Analysis"
+format: html
+---
+
+# Setup
+Here, I will outline my goals for this analysis, load the data, preprocess it, share the data dictionary, etc.
+
+## Guiding Question
+
+## Intended Audience
+
+## Link to Data
+
+## Data Dictionary
+
+## Data wrangling/Preprocessing
+
+
+# Analysis
+The actual analysis
+
+# Conclusion
+
+## Summary
+
+## Packages Used

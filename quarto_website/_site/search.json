@@ -4,7 +4,7 @@
     "href": "index.html",
     "title": "Home",
     "section": "",
-    "text": "Hello, I am Jonathan Ye\nI am an undergraduate senior studying Public Health and Applied Mathematics + Statistics at Homewood. As a child, I enjoyed playing outside and collecting rocks. Here is a picture of me that I use for my Linkedin, and other things.\n\n\n\nElephant"
+    "text": "Hello, I am Jonathan Ye\nI am an undergraduate senior studying Public Health and Applied Mathematics + Statistics at Homewood. As a child, I enjoyed playing outside and collecting rocks. Here is a picture of me that I use for my Linkedin, and other things.\n{width = 50%}"
   },
   {
     "objectID": "about.html",
@@ -12,5 +12,12 @@
     "title": "About",
     "section": "",
     "text": "About this site"
+  },
+  {
+    "objectID": "example_analysis.html",
+    "href": "example_analysis.html",
+    "title": "Example Analysis",
+    "section": "",
+    "text": "print(mean(1:5))\n\n[1] 3"
   }
 ]
