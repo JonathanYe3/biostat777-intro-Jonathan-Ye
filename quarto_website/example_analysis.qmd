@@ -7,18 +7,52 @@ format: html
 Here, I will outline my goals for this analysis, load the data, preprocess it, share the data dictionary, etc.
 
 ## Guiding Question
+Are there any characteristics that can help us predict whether a given person prefers mountains or beaches? (i.e. could we predict the answer to the question 'are you a mountain or a beach person')
 
 ## Intended Audience
+The intended audience is anyone who feels strongly about mountains or beaches.
 
 ## Link to Data
+https://www.kaggle.com/datasets/jahnavipaliwal/mountains-vs-beaches-preference
+
+```{python}
+# import kagglehub
+
+# # Download latest version
+# path = kagglehub.dataset_download("jahnavipaliwal/mountains-vs-beaches-preference")
+
+# print("Path to dataset files:", path)
+
+```
+
+I have moved the file to the data folder
 
 ## Data Dictionary
 
-## Data wrangling/Preprocessing
 
 
 # Analysis
-The actual analysis
+The actual analysis starts here. I want to use logistic regression to predict the label of 1-mountains or 0-beaches. To do this, I must respect the assumptions made for logistic regression, which I will tackle in the Data wrangling/Preprocessing section.
+
+## Data wrangling/Preprocessing
+Here are the assumptions:
+
+* Binary Outcome Variable: Logistic regression is used for binary classification, so your dependent variable should be binary (e.g., 0 or 1, True or False).
+
+* Independence of Observations: The observations should be independent of each other. No observation should influence another.
+
+* No Perfect Multicollinearity: The predictor variables should not be perfectly correlated with each other. High multicollinearity can make it difficult to determine the individual effect of each predictor.
+
+* Large Sample Size: Logistic regression requires a sufficiently large sample size to produce reliable results. As a rule of thumb, you should have at least 10-20 cases per predictor variable.
+
+* No Significant Outliers: Outliers can unduly influence the model. It’s important to check for and potentially address outliers in your data.
+
+* Observations Need to be Properly Distributed Across the Levels of the Dependent Variable: There should be a reasonable number of cases in both categories of the dependent variable. Extreme imbalances can lead to a biased model.
+
+FIND A SOURCE FOR THIS: https://www.statisticssolutions.com/free-resources/directory-of-statistical-analyses/assumptions-of-logistic-regression/
+
+
+
 
 # Conclusion
 
