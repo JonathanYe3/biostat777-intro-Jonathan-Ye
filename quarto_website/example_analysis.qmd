@@ -28,8 +28,12 @@ https://www.kaggle.com/datasets/jahnavipaliwal/mountains-vs-beaches-preference
 I have moved the file to the data folder
 
 ```{r}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+
 data = read.csv('data/mountains_vs_beaches_preferences.csv')
-cat('there are', nrow(data), "participatns, and", ncol(data) - 1, "predictors")
+cat(' there are', nrow(data), "participatns, and", ncol(data) - 1, "predictors")
 ```
 
 ## Data Dictionary
@@ -71,32 +75,261 @@ We will need to check this assumption.
 
 FIND A SOURCE FOR THIS: https://www.statisticssolutions.com/free-resources/directory-of-statistical-analyses/assumptions-of-logistic-regression/
 
+```{r}
+features = dplyr::select(data, -Preference)
+head(features)
+```
+
+In order to use our categorical features, we must convert them to factors. Moreover, some of our categorial features are ordinal, such as the education variable.
+
+```{r}
+features <- features %>%
+    mutate(across(where(is.character), as.factor))
+
+education_levels <- c("high school", "bachelor", "master", "doctorate")
+
+features <- features %>%
+    mutate(Education_Level = factor(features$Education_Level, levels = education_levels, ordered = TRUE))
+
+str(features)
+```
+
 ### Multicollinearity
 We will plot all of the pairwise correlations in a correlation matrix. In our cases, we will remove a variable if there is a correlation of 0.9 or higher, which is essentially perfectly correlated in practice.
 
-```{r}
 
+```{r}
+numeric_features <- features %>%
+    mutate(across(where(is.factor), as.numeric))
+cor_matrix <- stats::cor(numeric_features, use = "complete.obs")
+
+corrplot::corrplot(cor_matrix, method = "color", tl.cex = 0.7, addCoef.col = "black")
 
 ```
+
+We see that none of our variables are perfectly correlated, so this is great!
 
 ### Outlier Analysis
-Outliers only apply to our numerical variables, such as Age, Income, Travel_Frequency, Vacation_Budget, Proximity_to_Mountains, Proximity_to_Beaches. We will identify outliers as having $|value - median| > 1.5 \cdot IQR$ where IQR is the interquartile range. 
+Outliers only apply to our numerical variables, such as Age, Income, Travel_Frequency, Vacation_Budget, Proximity_to_Mountains, Proximity_to_Beaches. 
+::: {.column-margin}
+We will identify values as outliers if they meet the condition: 
+
+$$|value - median| > 1.5 \cdot IQR$$
+
+where IQR is the interquartile range. 
+:::
+
+First, it may help us to just look at the distributions of the numerical variables - I will plot histograms separately because of bin width issues.
 
 ```{r}
+numeric_features = dplyr::select(data, where(is.numeric)) %>% 
+    select(where(~ n_distinct(.) > 2))
+```
 
+```{r, fig.height = 6}
+ggplot(numeric_features, aes(x = Age)) +
+    geom_histogram(binwidth = 5) + 
+    labs(title = "Histogram of Participant Age Distribution")
+
+ggplot(numeric_features, aes(x = Income)) +
+    geom_histogram(binwidth = 10000) + 
+    labs(title = "Histogram of Participant Income Distribution")
+
+ggplot(numeric_features, aes(x = Travel_Frequency)) +
+    geom_histogram(binwidth = 1) + 
+    labs(title = "Histogram of Participant Travel Frequency Distribution")
+
+ggplot(numeric_features, aes(x = Vacation_Budget)) +
+    geom_histogram(binwidth = 250) + 
+    labs(title = "Histogram of Participant Vacation Budget Distribution")
+
+ggplot(numeric_features, aes(x = Proximity_to_Mountains)) +
+    geom_histogram(binwidth = 50) + 
+    labs(title = "Histogram of Participant Proximity to Mountains Distribution")
+
+ggplot(numeric_features, aes(x = Proximity_to_Beaches)) +
+    geom_histogram(binwidth = 50) + 
+    labs(title = "Histogram of Participant Proximity to Beaches Distribution")
 
 ```
 
+::: {.callout-note}
+Ok...these values are very odd. I am going to assume that this data set is either already preprocessed, or it's entirely synthetic data.
+:::
+```{r}
+
+identify_outliers <- function(x) {
+  IQR <- IQR(x, na.rm = TRUE)
+  median <- median(x, na.rm = TRUE)
+  lower_bound <- median - 1.5 * IQR
+  upper_bound <- median + 1.5 * IQR
+  return(x < lower_bound | x > upper_bound)
+}
+
+outliers <- numeric_features %>%
+  mutate(across(everything(), identify_outliers))
+
+print(colSums(outliers))
+```
+
+man this dataset actually sucks (too good, no preprocessing for me to do) there are zero outliers. This is 99% synthetic data, and for whatever reason it was generated from uniform distributions, or something like that.
+
 ### Observation distributions
-We need to ensure that we have an approximately equal number of mountain and beach enjoyers. Something in the neighborhood of 50-50 would be preferred.
+We need to ensure that we have an approximately equal number of mountain and beach enjoyers. Something in the neighborhood of 50-50 would be preferred. A pie chart should do the trick.
+
+```{r}
+pie_data <- data.frame(
+    group=c('mountains', 'beaches'),
+    value=c(sum(data$Preference == '1'), sum(data$Preference == '0'))
+    )
+
+ggplot(pie_data, aes(x="", y=value, fill=group)) +
+    geom_bar(stat="identity", width=1) +
+    coord_polar("y", start=0)
+
+cat('number of mountain enjoyers:', sum(data$Preference == '1'), '\nnumber of beach enjoyers:', sum(data$Preference == '0'), '\n')
+```
+
+::: {.callout-important}
+
+AHA! Ok, that's not good, we can't have this imbalanced of classes. I'm just going to randomly sample 13148 beach enjoyers.
+
+:::
+```{r}
+num_mountain_enjoyers <- sum(data$Preference == '1')
+beach_sample <- data %>%
+  filter(Preference == '0') %>%
+  sample_n(num_mountain_enjoyers)
+
+balanced_data <- data %>%
+  filter(Preference == '1') %>%
+  bind_rows(beach_sample)
+
+num_mountain_enjoyers <- sum(balanced_data$Preference == '1')
+num_beach_enjoyers <- sum(balanced_data$Preference == '0')
+cat('Number of mountain enjoyers:', num_mountain_enjoyers, '\nNumber of beach enjoyers:', num_beach_enjoyers, '\n')
+
+pie_data <- data.frame(
+  group = c('mountains', 'beaches'),
+  value = c(num_mountain_enjoyers, num_beach_enjoyers)
+)
+
+ggplot(pie_data, aes(x = "", y = value, fill = group)) +
+  geom_bar(stat = "identity", width = 1) +
+  coord_polar("y", start = 0) +
+  labs(title = "Balanced Preference Distribution")
+
+print(pie_data)
+
+```
 
 
 ### Feature Engineering
+Normalizing the data is generally a good thing to do. Not super necessary here, but I will do it anyways. https://www.turing.com/kb/effects-of-normalization-techniques-on-logistic-regression-in-data-science
+
+```{r}
+normalized_data <- balanced_data %>%
+  select(where(is.numeric)) %>%
+  select(where(~ n_distinct(.) > 2)) %>%
+  mutate(across(everything(), ~ (.-mean(., na.rm = TRUE))/sd(., na.rm = TRUE)))
+
+print(sd(normalized_data$Income))
+
+categorical_data <- balanced_data %>% select(!where(is.numeric) | where(~ n_distinct(.) == 2)) 
+
+normalized_data <- bind_cols(categorical_data, normalized_data) 
+head(normalized_data)
+```
+
+
+Now, need to convert this subset of the data into factors where appropriate
+```{r}
+normalized_data <- normalized_data %>%
+    mutate(across(where(is.character), as.factor))
+
+education_levels <- c("high school", "bachelor", "master", "doctorate")
+
+normalized_data <- normalized_data %>%
+    mutate(Education_Level = factor(Education_Level, levels = education_levels, ordered = TRUE))
+
+str(normalized_data)
+```
+
+```{r, fig.width = 10}
+numeric_features = dplyr::select(normalized_data, where(is.numeric)) %>% 
+    select(where(~ n_distinct(.) > 2))
+
+long_data <- numeric_features %>%
+    pivot_longer(cols = everything(), names_to = "variable", values_to = "value")
+
+ggplot(long_data, aes(x = value)) +
+    geom_histogram(binwidth = 0.5, fill = "steelblue", color = "white") +
+    facet_wrap(~variable, scales = "free") +
+    labs(title = "Histograms of Numeric Features", x = "Value", y = "Frequency")
+
+```
 
 ## Logistic Regression
+
+```{r}
+log_reg = glm(formula = Preference ~ ., family = "binomial", data = normalized_data)
+summary(log_reg)
+```
+
+Oh wow that's pretty sad...I think I did not select the greatest dataset here. Nevertheless, we should plot some visuals.
+
+```{r}
+normalized_data$predicted_prob <- predict(log_reg, type = "response")
+
+ggplot(normalized_data, aes(x = predicted_prob, fill = as.factor(Preference))) +
+    geom_histogram(binwidth = 0.05, position = "identity", alpha = 0.6) +
+    labs(title = "Predicted Probability Distribution by Preference",
+         x = "Predicted Probability", y = "Count", fill = "Preference") +
+    theme_minimal()
+
+
+```
+
+```{r}
+library(pROC)
+
+roc_obj <- roc(normalized_data$Preference, normalized_data$predicted_prob)
+
+ggplot(data = data.frame(tpr = roc_obj$sensitivities, fpr = 1 - roc_obj$specificities), aes(x = fpr, y = tpr)) +
+    geom_line(color = "blue") +
+    geom_abline(linetype = "dashed") +
+    labs(title = "ROC Curve", x = "False Positive Rate", y = "True Positive Rate") +
+    theme_minimal()
+
+
+```
+
+```{r}
+threshold <- 0.5
+
+normalized_data$predicted_class <- ifelse(normalized_data$predicted_prob > threshold, 1, 0)
+
+zero_one_loss <- sum(normalized_data$predicted_class != normalized_data$Preference)
+
+cat('the zero one loss for our training set is:', zero_one_loss, '\n')
+```
 
 # Conclusion
 
 ## Summary
+We can see that our logistic regression was able to perfectly predict the preferences for our training data. This is pretty worthless because the error on the training data greatly underestimates the true error of our prediction function, and I did not save a test set because my goal was to identify which variables were the most important in influencing someone's preference of mountains or beaches. Unfortunately, I can't really accomplish that because none of the coefficients were statistically significant, which we can see in the summary of the coefficients. The P values are all greater than 0.5 (which is much too high). We can make some conclusions based on the size of the coefficients themselves, however. For example, large coefficients such as swimming and sunbathing as preferred activities make sense (-7.039e+03 and -7.038e+03). It also makes sense that factors such as education and gender are very insignificant predictors. 
 
 ## Packages Used
+Dplyr:
+* select
+* where
+* across
+* mutate
+* n_distinct
+* everything
+
+ggplot2:
+* geom_histogram
+* geom_bar
+* geom_line
+* geom_abline

@@ -101,6 +101,35 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   }
 }</script>
 
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
 
 <link rel="stylesheet" href="styles.css">
 </head>
@@ -159,7 +188,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </ul></li>
   <li><a href="#analysis" id="toc-analysis" class="nav-link" data-scroll-target="#analysis">Analysis</a>
   <ul class="collapse">
-  <li><a href="#data-wranglingpreprocessing" id="toc-data-wranglingpreprocessing" class="nav-link" data-scroll-target="#data-wranglingpreprocessing">Data wrangling/Preprocessing</a></li>
+  <li><a href="#data-wranglingpreprocessing" id="toc-data-wranglingpreprocessing" class="nav-link" data-scroll-target="#data-wranglingpreprocessing">Data wrangling/Preprocessing</a>
+  <ul class="collapse">
+  <li><a href="#multicollinearity" id="toc-multicollinearity" class="nav-link" data-scroll-target="#multicollinearity">Multicollinearity</a></li>
+  <li><a href="#outlier-analysis" id="toc-outlier-analysis" class="nav-link" data-scroll-target="#outlier-analysis">Outlier Analysis</a></li>
+  <li><a href="#observation-distributions" id="toc-observation-distributions" class="nav-link" data-scroll-target="#observation-distributions">Observation distributions</a></li>
+  <li><a href="#feature-engineering" id="toc-feature-engineering" class="nav-link" data-scroll-target="#feature-engineering">Feature Engineering</a></li>
+  </ul></li>
+  <li><a href="#logistic-regression" id="toc-logistic-regression" class="nav-link" data-scroll-target="#logistic-regression">Logistic Regression</a></li>
   </ul></li>
   <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">Conclusion</a>
   <ul class="collapse">
@@ -205,7 +241,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="link-to-data" class="level2">
 <h2 class="anchored" data-anchor-id="link-to-data">Link to Data</h2>
 <p>https://www.kaggle.com/datasets/jahnavipaliwal/mountains-vs-beaches-preference</p>
-<div id="a8aa42ea" class="cell" data-execution_count="1">
+<div class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># import kagglehub</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co"># # Download latest version</span></span>
@@ -214,9 +250,126 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co"># print("Path to dataset files:", path)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>I have moved the file to the data folder</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>
+Attaching package: 'dplyr'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following objects are masked from 'package:stats':
+
+    filter, lag</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following objects are masked from 'package:base':
+
+    intersect, setdiff, setequal, union</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyr)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>data <span class="ot">=</span> <span class="fu">read.csv</span>(<span class="st">'data/mountains_vs_beaches_preferences.csv'</span>)</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">' there are'</span>, <span class="fu">nrow</span>(data), <span class="st">"participatns, and"</span>, <span class="fu">ncol</span>(data) <span class="sc">-</span> <span class="dv">1</span>, <span class="st">"predictors"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> there are 52444 participatns, and 13 predictors</code></pre>
+</div>
+</div>
 </section>
 <section id="data-dictionary" class="level2">
 <h2 class="anchored" data-anchor-id="data-dictionary">Data Dictionary</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>data_dictionary <span class="ot">=</span> <span class="fu">read.csv</span>(<span class="st">'data/data_dictionary.csv'</span>)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(data_dictionary)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 16%">
+<col style="width: 7%">
+<col style="width: 76%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">variables</th>
+<th style="text-align: left;">type</th>
+<th style="text-align: left;">description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Age</td>
+<td style="text-align: left;">integer</td>
+<td style="text-align: left;">Age of the individual (numerical).</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Gender</td>
+<td style="text-align: left;">character</td>
+<td style="text-align: left;">Gender identity of the individual (categorical: male, female, non-binary).</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Income</td>
+<td style="text-align: left;">integer</td>
+<td style="text-align: left;">Annual income of the individual (numerical).</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Education_Level</td>
+<td style="text-align: left;">character</td>
+<td style="text-align: left;">Highest level of education attained (categorical: high school, bachelor, master, doctorate).</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Travel_Frequency</td>
+<td style="text-align: left;">integer</td>
+<td style="text-align: left;">Number of vacations taken per year (numerical).</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Preferred_Activities</td>
+<td style="text-align: left;">character</td>
+<td style="text-align: left;">Activities preferred by individuals during vacations (categorical: hiking, swimming, skiing, sunbathing).</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Vacation_Budget</td>
+<td style="text-align: left;">integer</td>
+<td style="text-align: left;">Budget allocated for vacations (numerical).</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Location</td>
+<td style="text-align: left;">character</td>
+<td style="text-align: left;">Type of residence (categorical: urban, suburban, rural).</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Proximity_to_Mountains</td>
+<td style="text-align: left;">integer</td>
+<td style="text-align: left;">Distance from the nearest mountains (numerical, in miles).</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Proximity_to_Beaches</td>
+<td style="text-align: left;">integer</td>
+<td style="text-align: left;">Distance from the nearest beaches (numerical, in miles).</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Favorite_Season</td>
+<td style="text-align: left;">character</td>
+<td style="text-align: left;">Preferred season for vacations (categorical: summer, winter, spring, fall).</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Pets</td>
+<td style="text-align: left;">integer</td>
+<td style="text-align: left;">Indicates whether the individual owns pets (binary: 0 = No, 1 = Yes).</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Environmental_Concerns</td>
+<td style="text-align: left;">integer</td>
+<td style="text-align: left;">Indicates whether the individual has environmental concerns (binary: 0 = No, 1 = Yes).</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Preference</td>
+<td style="text-align: left;">integer</td>
+<td style="text-align: left;">Indicates whether the individual prefers mountains or beaches (binary: 0 = beaches, 1 = mountains)</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
 </section>
 </section>
 <section id="analysis" class="level1">
@@ -226,23 +379,506 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 class="anchored" data-anchor-id="data-wranglingpreprocessing">Data wrangling/Preprocessing</h2>
 <p>Here are the assumptions:</p>
 <ul>
-<li><p>Binary Outcome Variable: Logistic regression is used for binary classification, so your dependent variable should be binary (e.g., 0 or 1, True or False).</p></li>
-<li><p>Independence of Observations: The observations should be independent of each other. No observation should influence another.</p></li>
-<li><p>No Perfect Multicollinearity: The predictor variables should not be perfectly correlated with each other. High multicollinearity can make it difficult to determine the individual effect of each predictor.</p></li>
-<li><p>Large Sample Size: Logistic regression requires a sufficiently large sample size to produce reliable results. As a rule of thumb, you should have at least 10-20 cases per predictor variable.</p></li>
-<li><p>No Significant Outliers: Outliers can unduly influence the model. It’s important to check for and potentially address outliers in your data.</p></li>
-<li><p>Observations Need to be Properly Distributed Across the Levels of the Dependent Variable: There should be a reasonable number of cases in both categories of the dependent variable. Extreme imbalances can lead to a biased model.</p></li>
+<li>Binary Outcome Variable: Logistic regression is used for binary classification, so the dependent variable should be binary (e.g., 0 or 1, True or False).</li>
 </ul>
+<p>This assumption is met by our dataset.</p>
+<ul>
+<li>Independence of Observations: The observations should be independent of each other. No observation should influence another.</li>
+</ul>
+<p>This assumption should be met, based on how the data was collected. Hopefully the participants are from different families.</p>
+<ul>
+<li>No Perfect Multicollinearity: The predictor variables should not be perfectly correlated with each other. High multicollinearity can make it difficult to determine the individual effect of each predictor.</li>
+</ul>
+<p>We will need to check this assumption.</p>
+<ul>
+<li>Large Sample Size: Logistic regression requires a sufficiently large sample size to produce reliable results.</li>
+</ul>
+<p>With a sample size of 5244 and 13 predictors, this assumption is more than met. In fact, we can even consider adding a couple of features from nonlinear combinations of our original 13 predictors, and still be fine.</p>
+<ul>
+<li>No Significant Outliers: Outliers can influence the model, since Logistic regression minimizes a loss function - and outliers introduce too much loss that the model can try to correct for.</li>
+</ul>
+<p>We will need to check this assumption.</p>
+<ul>
+<li>Observations Need to be Properly Distributed Across the Levels of the Dependent Variable: There should be a reasonable number of cases in both categories of the dependent variable. Extreme imbalances can lead to a biased model.</li>
+</ul>
+<p>We will need to check this assumption.</p>
 <p>FIND A SOURCE FOR THIS: https://www.statisticssolutions.com/free-resources/directory-of-statistical-analyses/assumptions-of-logistic-regression/</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>features <span class="ot">=</span> dplyr<span class="sc">::</span><span class="fu">select</span>(data, <span class="sc">-</span>Preference)</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(features)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  Age     Gender Income Education_Level Travel_Frequency Preferred_Activities
+1  56       male  71477        bachelor                9               skiing
+2  69       male  88740          master                1             swimming
+3  46     female  46562          master                0               skiing
+4  32 non-binary  99044     high school                6               hiking
+5  60     female 106583     high school                5           sunbathing
+6  25       male 110588       doctorate                3           sunbathing
+  Vacation_Budget Location Proximity_to_Mountains Proximity_to_Beaches
+1            2477    urban                    175                  267
+2            4777 suburban                    228                  190
+3            1469    urban                     71                  280
+4            1482    rural                     31                  255
+5             516 suburban                     23                  151
+6            2895    urban                      6                   47
+  Favorite_Season Pets Environmental_Concerns
+1          summer    0                      1
+2            fall    0                      1
+3          winter    0                      0
+4          summer    1                      0
+5          winter    1                      1
+6            fall    0                      1</code></pre>
+</div>
+</div>
+<p>In order to use our categorical features, we must convert them to factors. Moreover, some of our categorial features are ordinal, such as the education variable.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>features <span class="ot">&lt;-</span> features <span class="sc">%&gt;%</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">where</span>(is.character), as.factor))</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>education_levels <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"high school"</span>, <span class="st">"bachelor"</span>, <span class="st">"master"</span>, <span class="st">"doctorate"</span>)</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>features <span class="ot">&lt;-</span> features <span class="sc">%&gt;%</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">Education_Level =</span> <span class="fu">factor</span>(features<span class="sc">$</span>Education_Level, <span class="at">levels =</span> education_levels, <span class="at">ordered =</span> <span class="cn">TRUE</span>))</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a><span class="fu">str</span>(features)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>'data.frame':   52444 obs. of  13 variables:
+ $ Age                   : int  56 69 46 32 60 25 38 56 36 40 ...
+ $ Gender                : Factor w/ 3 levels "female","male",..: 2 2 1 3 1 2 2 3 2 3 ...
+ $ Income                : int  71477 88740 46562 99044 106583 110588 22245 109411 22531 90840 ...
+ $ Education_Level       : Ord.factor w/ 4 levels "high school"&lt;..: 2 3 3 1 1 4 2 2 3 1 ...
+ $ Travel_Frequency      : int  9 1 0 6 5 3 1 8 6 1 ...
+ $ Preferred_Activities  : Factor w/ 4 levels "hiking","skiing",..: 2 4 2 1 3 3 4 3 4 4 ...
+ $ Vacation_Budget       : int  2477 4777 1469 1482 516 2895 4994 3656 2408 4044 ...
+ $ Location              : Factor w/ 3 levels "rural","suburban",..: 3 2 3 1 2 3 1 3 2 1 ...
+ $ Proximity_to_Mountains: int  175 228 71 31 23 6 157 210 218 271 ...
+ $ Proximity_to_Beaches  : int  267 190 280 255 151 47 225 166 263 15 ...
+ $ Favorite_Season       : Factor w/ 4 levels "fall","spring",..: 3 1 4 3 4 1 1 4 3 3 ...
+ $ Pets                  : int  0 0 0 1 1 0 0 1 1 1 ...
+ $ Environmental_Concerns: int  1 1 0 0 1 1 1 0 1 1 ...</code></pre>
+</div>
+</div>
+<section id="multicollinearity" class="level3">
+<h3 class="anchored" data-anchor-id="multicollinearity">Multicollinearity</h3>
+<p>We will plot all of the pairwise correlations in a correlation matrix. In our cases, we will remove a variable if there is a correlation of 0.9 or higher, which is essentially perfectly correlated in practice.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>numeric_features <span class="ot">&lt;-</span> features <span class="sc">%&gt;%</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">where</span>(is.factor), as.numeric))</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>cor_matrix <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">cor</span>(numeric_features, <span class="at">use =</span> <span class="st">"complete.obs"</span>)</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>corrplot<span class="sc">::</span><span class="fu">corrplot</span>(cor_matrix, <span class="at">method =</span> <span class="st">"color"</span>, <span class="at">tl.cex =</span> <span class="fl">0.7</span>, <span class="at">addCoef.col =</span> <span class="st">"black"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="example_analysis_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>We see that none of our variables are perfectly correlated, so this is great!</p>
+</section>
+<section id="outlier-analysis" class="level3">
+<h3 class="anchored" data-anchor-id="outlier-analysis">Outlier Analysis</h3>
+<p>Outliers only apply to our numerical variables, such as Age, Income, Travel_Frequency, Vacation_Budget, Proximity_to_Mountains, Proximity_to_Beaches. ::: {.column-margin} We will identify values as outliers if they meet the condition:</p>
+<p><span class="math display">\[|value - median| &gt; 1.5 \cdot IQR\]</span></p>
+<p>where IQR is the interquartile range. :::</p>
+<p>First, it may help us to just look at the distributions of the numerical variables - I will plot histograms separately because of bin width issues.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>numeric_features <span class="ot">=</span> dplyr<span class="sc">::</span><span class="fu">select</span>(data, <span class="fu">where</span>(is.numeric)) <span class="sc">%&gt;%</span> </span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">select</span>(<span class="fu">where</span>(<span class="sc">~</span> <span class="fu">n_distinct</span>(.) <span class="sc">&gt;</span> <span class="dv">2</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(numeric_features, <span class="fu">aes</span>(<span class="at">x =</span> Age)) <span class="sc">+</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_histogram</span>(<span class="at">binwidth =</span> <span class="dv">5</span>) <span class="sc">+</span> </span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Histogram of Participant Age Distribution"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="example_analysis_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(numeric_features, <span class="fu">aes</span>(<span class="at">x =</span> Income)) <span class="sc">+</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_histogram</span>(<span class="at">binwidth =</span> <span class="dv">10000</span>) <span class="sc">+</span> </span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Histogram of Participant Income Distribution"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="example_analysis_files/figure-html/unnamed-chunk-8-2.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(numeric_features, <span class="fu">aes</span>(<span class="at">x =</span> Travel_Frequency)) <span class="sc">+</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_histogram</span>(<span class="at">binwidth =</span> <span class="dv">1</span>) <span class="sc">+</span> </span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Histogram of Participant Travel Frequency Distribution"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="example_analysis_files/figure-html/unnamed-chunk-8-3.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(numeric_features, <span class="fu">aes</span>(<span class="at">x =</span> Vacation_Budget)) <span class="sc">+</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_histogram</span>(<span class="at">binwidth =</span> <span class="dv">250</span>) <span class="sc">+</span> </span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Histogram of Participant Vacation Budget Distribution"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="example_analysis_files/figure-html/unnamed-chunk-8-4.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(numeric_features, <span class="fu">aes</span>(<span class="at">x =</span> Proximity_to_Mountains)) <span class="sc">+</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_histogram</span>(<span class="at">binwidth =</span> <span class="dv">50</span>) <span class="sc">+</span> </span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Histogram of Participant Proximity to Mountains Distribution"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="example_analysis_files/figure-html/unnamed-chunk-8-5.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(numeric_features, <span class="fu">aes</span>(<span class="at">x =</span> Proximity_to_Beaches)) <span class="sc">+</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_histogram</span>(<span class="at">binwidth =</span> <span class="dv">50</span>) <span class="sc">+</span> </span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Histogram of Participant Proximity to Beaches Distribution"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="example_analysis_files/figure-html/unnamed-chunk-8-6.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Ok…these values are very odd. I am going to assume that this data set is either already preprocessed, or it’s entirely synthetic data.</p>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>identify_outliers <span class="ot">&lt;-</span> <span class="cf">function</span>(x) {</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>  IQR <span class="ot">&lt;-</span> <span class="fu">IQR</span>(x, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>  median <span class="ot">&lt;-</span> <span class="fu">median</span>(x, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>  lower_bound <span class="ot">&lt;-</span> median <span class="sc">-</span> <span class="fl">1.5</span> <span class="sc">*</span> IQR</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>  upper_bound <span class="ot">&lt;-</span> median <span class="sc">+</span> <span class="fl">1.5</span> <span class="sc">*</span> IQR</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(x <span class="sc">&lt;</span> lower_bound <span class="sc">|</span> x <span class="sc">&gt;</span> upper_bound)</span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>outliers <span class="ot">&lt;-</span> numeric_features <span class="sc">%&gt;%</span></span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">everything</span>(), identify_outliers))</span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">colSums</span>(outliers))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                   Age                 Income       Travel_Frequency 
+                     0                      0                      0 
+       Vacation_Budget Proximity_to_Mountains   Proximity_to_Beaches 
+                     0                      0                      0 </code></pre>
+</div>
+</div>
+<p>man this dataset actually sucks (too good, no preprocessing for me to do) there are zero outliers. This is 99% synthetic data, and for whatever reason it was generated from uniform distributions, or something like that.</p>
+</section>
+<section id="observation-distributions" class="level3">
+<h3 class="anchored" data-anchor-id="observation-distributions">Observation distributions</h3>
+<p>We need to ensure that we have an approximately equal number of mountain and beach enjoyers. Something in the neighborhood of 50-50 would be preferred. A pie chart should do the trick.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>pie_data <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>    <span class="at">group=</span><span class="fu">c</span>(<span class="st">'mountains'</span>, <span class="st">'beaches'</span>),</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">value=</span><span class="fu">c</span>(<span class="fu">sum</span>(data<span class="sc">$</span>Preference <span class="sc">==</span> <span class="st">'1'</span>), <span class="fu">sum</span>(data<span class="sc">$</span>Preference <span class="sc">==</span> <span class="st">'0'</span>))</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(pie_data, <span class="fu">aes</span>(<span class="at">x=</span><span class="st">""</span>, <span class="at">y=</span>value, <span class="at">fill=</span>group)) <span class="sc">+</span></span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_bar</span>(<span class="at">stat=</span><span class="st">"identity"</span>, <span class="at">width=</span><span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">coord_polar</span>(<span class="st">"y"</span>, <span class="at">start=</span><span class="dv">0</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="example_analysis_files/figure-html/unnamed-chunk-10-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">'number of mountain enjoyers:'</span>, <span class="fu">sum</span>(data<span class="sc">$</span>Preference <span class="sc">==</span> <span class="st">'1'</span>), <span class="st">'</span><span class="sc">\n</span><span class="st">number of beach enjoyers:'</span>, <span class="fu">sum</span>(data<span class="sc">$</span>Preference <span class="sc">==</span> <span class="st">'0'</span>), <span class="st">'</span><span class="sc">\n</span><span class="st">'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>number of mountain enjoyers: 13148 
+number of beach enjoyers: 39296 </code></pre>
+</div>
+</div>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Important
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>AHA! Ok, that’s not good, we can’t have this imbalanced of classes. I’m just going to randomly sample 13148 beach enjoyers.</p>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>num_mountain_enjoyers <span class="ot">&lt;-</span> <span class="fu">sum</span>(data<span class="sc">$</span>Preference <span class="sc">==</span> <span class="st">'1'</span>)</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>beach_sample <span class="ot">&lt;-</span> data <span class="sc">%&gt;%</span></span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(Preference <span class="sc">==</span> <span class="st">'0'</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">sample_n</span>(num_mountain_enjoyers)</span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>balanced_data <span class="ot">&lt;-</span> data <span class="sc">%&gt;%</span></span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(Preference <span class="sc">==</span> <span class="st">'1'</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">bind_rows</span>(beach_sample)</span>
+<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a>num_mountain_enjoyers <span class="ot">&lt;-</span> <span class="fu">sum</span>(balanced_data<span class="sc">$</span>Preference <span class="sc">==</span> <span class="st">'1'</span>)</span>
+<span id="cb26-11"><a href="#cb26-11" aria-hidden="true" tabindex="-1"></a>num_beach_enjoyers <span class="ot">&lt;-</span> <span class="fu">sum</span>(balanced_data<span class="sc">$</span>Preference <span class="sc">==</span> <span class="st">'0'</span>)</span>
+<span id="cb26-12"><a href="#cb26-12" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">'Number of mountain enjoyers:'</span>, num_mountain_enjoyers, <span class="st">'</span><span class="sc">\n</span><span class="st">Number of beach enjoyers:'</span>, num_beach_enjoyers, <span class="st">'</span><span class="sc">\n</span><span class="st">'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Number of mountain enjoyers: 13148 
+Number of beach enjoyers: 13148 </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>pie_data <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">group =</span> <span class="fu">c</span>(<span class="st">'mountains'</span>, <span class="st">'beaches'</span>),</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">value =</span> <span class="fu">c</span>(num_mountain_enjoyers, num_beach_enjoyers)</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(pie_data, <span class="fu">aes</span>(<span class="at">x =</span> <span class="st">""</span>, <span class="at">y =</span> value, <span class="at">fill =</span> group)) <span class="sc">+</span></span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_bar</span>(<span class="at">stat =</span> <span class="st">"identity"</span>, <span class="at">width =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_polar</span>(<span class="st">"y"</span>, <span class="at">start =</span> <span class="dv">0</span>) <span class="sc">+</span></span>
+<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Balanced Preference Distribution"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="example_analysis_files/figure-html/unnamed-chunk-11-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(pie_data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>      group value
+1 mountains 13148
+2   beaches 13148</code></pre>
+</div>
+</div>
+</section>
+<section id="feature-engineering" class="level3">
+<h3 class="anchored" data-anchor-id="feature-engineering">Feature Engineering</h3>
+<p>Normalizing the data is generally a good thing to do. Not super necessary here, but I will do it anyways. https://www.turing.com/kb/effects-of-normalization-techniques-on-logistic-regression-in-data-science</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>normalized_data <span class="ot">&lt;-</span> balanced_data <span class="sc">%&gt;%</span></span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="fu">where</span>(is.numeric)) <span class="sc">%&gt;%</span></span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="fu">where</span>(<span class="sc">~</span> <span class="fu">n_distinct</span>(.) <span class="sc">&gt;</span> <span class="dv">2</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">everything</span>(), <span class="sc">~</span> (.<span class="sc">-</span><span class="fu">mean</span>(., <span class="at">na.rm =</span> <span class="cn">TRUE</span>))<span class="sc">/</span><span class="fu">sd</span>(., <span class="at">na.rm =</span> <span class="cn">TRUE</span>)))</span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">sd</span>(normalized_data<span class="sc">$</span>Income))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 1</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>categorical_data <span class="ot">&lt;-</span> balanced_data <span class="sc">%&gt;%</span> <span class="fu">select</span>(<span class="sc">!</span><span class="fu">where</span>(is.numeric) <span class="sc">|</span> <span class="fu">where</span>(<span class="sc">~</span> <span class="fu">n_distinct</span>(.) <span class="sc">==</span> <span class="dv">2</span>)) </span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>normalized_data <span class="ot">&lt;-</span> <span class="fu">bind_cols</span>(categorical_data, normalized_data) </span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(normalized_data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>      Gender Education_Level Preferred_Activities Location Favorite_Season Pets
+1       male        bachelor               skiing    urban          summer    0
+2     female          master               skiing    urban          winter    0
+3 non-binary     high school               hiking    rural          summer    1
+4     female        bachelor               hiking suburban          summer    1
+5       male     high school               hiking suburban            fall    0
+6     female          master               skiing    urban            fall    1
+  Environmental_Concerns Preference        Age      Income Travel_Frequency
+1                      1          1  0.8339919  0.05253978        1.5714037
+2                      0          1  0.1686888 -0.81155439       -1.5613962
+3                      0          1 -0.7627354  1.00860978        0.5271370
+4                      1          1 -0.1639627 -0.59541813        0.8752259
+5                      0          1  0.9005222 -0.14427878       -0.5171296
+6                      1          1 -0.1639627  1.03517595       -0.8652185
+  Vacation_Budget Proximity_to_Mountains Proximity_to_Beaches
+1     -0.20240528              0.4873456            1.1860580
+2     -0.97893258             -0.7365135            1.3397235
+3     -0.96891784             -1.2072285            1.0442129
+4     -0.88494813             -0.0422088            1.0323925
+5     -0.10225790             -1.1483891            1.0796742
+6      0.06953335             -0.6659062            0.5004734</code></pre>
+</div>
+</div>
+<p>Now, need to convert this subset of the data into factors where appropriate</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>normalized_data <span class="ot">&lt;-</span> normalized_data <span class="sc">%&gt;%</span></span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">where</span>(is.character), as.factor))</span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a>education_levels <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"high school"</span>, <span class="st">"bachelor"</span>, <span class="st">"master"</span>, <span class="st">"doctorate"</span>)</span>
+<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a>normalized_data <span class="ot">&lt;-</span> normalized_data <span class="sc">%&gt;%</span></span>
+<span id="cb35-7"><a href="#cb35-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">Education_Level =</span> <span class="fu">factor</span>(Education_Level, <span class="at">levels =</span> education_levels, <span class="at">ordered =</span> <span class="cn">TRUE</span>))</span>
+<span id="cb35-8"><a href="#cb35-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-9"><a href="#cb35-9" aria-hidden="true" tabindex="-1"></a><span class="fu">str</span>(normalized_data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>'data.frame':   26296 obs. of  14 variables:
+ $ Gender                : Factor w/ 3 levels "female","male",..: 2 1 3 1 2 1 3 1 2 1 ...
+ $ Education_Level       : Ord.factor w/ 4 levels "high school"&lt;..: 2 3 1 2 1 3 1 1 1 1 ...
+ $ Preferred_Activities  : Factor w/ 4 levels "hiking","skiing",..: 2 2 1 1 1 2 2 1 2 2 ...
+ $ Location              : Factor w/ 3 levels "rural","suburban",..: 3 3 1 2 2 3 2 2 2 1 ...
+ $ Favorite_Season       : Factor w/ 4 levels "fall","spring",..: 3 4 3 3 1 1 3 2 2 2 ...
+ $ Pets                  : int  0 0 1 1 0 1 0 1 0 1 ...
+ $ Environmental_Concerns: int  1 0 0 1 0 1 1 0 0 0 ...
+ $ Preference            : int  1 1 1 1 1 1 1 1 1 1 ...
+ $ Age                   : num  0.834 0.169 -0.763 -0.164 0.901 ...
+ $ Income                : num  0.0525 -0.8116 1.0086 -0.5954 -0.1443 ...
+ $ Travel_Frequency      : num  1.571 -1.561 0.527 0.875 -0.517 ...
+ $ Vacation_Budget       : num  -0.202 -0.979 -0.969 -0.885 -0.102 ...
+ $ Proximity_to_Mountains: num  0.4873 -0.7365 -1.2072 -0.0422 -1.1484 ...
+ $ Proximity_to_Beaches  : num  1.19 1.34 1.04 1.03 1.08 ...</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>numeric_features <span class="ot">=</span> dplyr<span class="sc">::</span><span class="fu">select</span>(normalized_data, <span class="fu">where</span>(is.numeric)) <span class="sc">%&gt;%</span> </span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">select</span>(<span class="fu">where</span>(<span class="sc">~</span> <span class="fu">n_distinct</span>(.) <span class="sc">&gt;</span> <span class="dv">2</span>))</span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a>long_data <span class="ot">&lt;-</span> numeric_features <span class="sc">%&gt;%</span></span>
+<span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">pivot_longer</span>(<span class="at">cols =</span> <span class="fu">everything</span>(), <span class="at">names_to =</span> <span class="st">"variable"</span>, <span class="at">values_to =</span> <span class="st">"value"</span>)</span>
+<span id="cb37-6"><a href="#cb37-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-7"><a href="#cb37-7" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(long_data, <span class="fu">aes</span>(<span class="at">x =</span> value)) <span class="sc">+</span></span>
+<span id="cb37-8"><a href="#cb37-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_histogram</span>(<span class="at">binwidth =</span> <span class="fl">0.5</span>, <span class="at">fill =</span> <span class="st">"steelblue"</span>, <span class="at">color =</span> <span class="st">"white"</span>) <span class="sc">+</span></span>
+<span id="cb37-9"><a href="#cb37-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">facet_wrap</span>(<span class="sc">~</span>variable, <span class="at">scales =</span> <span class="st">"free"</span>) <span class="sc">+</span></span>
+<span id="cb37-10"><a href="#cb37-10" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Histograms of Numeric Features"</span>, <span class="at">x =</span> <span class="st">"Value"</span>, <span class="at">y =</span> <span class="st">"Frequency"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="example_analysis_files/figure-html/unnamed-chunk-14-1.png" class="img-fluid figure-img" width="960"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="logistic-regression" class="level2">
+<h2 class="anchored" data-anchor-id="logistic-regression">Logistic Regression</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>log_reg <span class="ot">=</span> <span class="fu">glm</span>(<span class="at">formula =</span> Preference <span class="sc">~</span> ., <span class="at">family =</span> <span class="st">"binomial"</span>, <span class="at">data =</span> normalized_data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: glm.fit: algorithm did not converge</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(log_reg)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+glm(formula = Preference ~ ., family = "binomial", data = normalized_data)
+
+Coefficients:
+                                 Estimate Std. Error z value Pr(&gt;|z|)
+(Intercept)                     7.746e+02  1.646e+03   0.471    0.638
+Gendermale                     -8.775e-01  8.182e+01  -0.011    0.991
+Gendernon-binary               -4.294e-01  7.323e+01  -0.006    0.995
+Education_Level.L               1.135e-01  6.589e+01   0.002    0.999
+Education_Level.Q              -1.014e-01  5.822e+01  -0.002    0.999
+Education_Level.C               7.034e-02  5.142e+01   0.001    0.999
+Preferred_Activitiesskiing     -2.353e-02  5.555e+01   0.000    1.000
+Preferred_Activitiessunbathing -7.011e+03  1.494e+04  -0.469    0.639
+Preferred_Activitiesswimming   -7.008e+03  1.493e+04  -0.469    0.639
+Locationsuburban               -4.504e-01  7.596e+01  -0.006    0.995
+Locationurban                  -9.393e-01  7.007e+01  -0.013    0.989
+Favorite_Seasonspring           2.647e-01  7.533e+01   0.004    0.997
+Favorite_Seasonsummer           4.340e-01  7.585e+01   0.006    0.995
+Favorite_Seasonwinter           3.475e-01  8.222e+01   0.004    0.997
+Pets                            5.944e-01  5.696e+01   0.010    0.992
+Environmental_Concerns         -2.249e-01  5.628e+01  -0.004    0.997
+Age                            -3.849e-02  2.919e+01  -0.001    0.999
+Income                         -1.653e-01  2.928e+01  -0.006    0.995
+Travel_Frequency               -1.075e-01  2.809e+01  -0.004    0.997
+Vacation_Budget                -4.327e-02  2.863e+01  -0.002    0.999
+Proximity_to_Mountains         -2.018e+03  4.282e+03  -0.471    0.637
+Proximity_to_Beaches            2.009e+03  4.262e+03   0.471    0.637
+
+(Dispersion parameter for binomial family taken to be 1)
+
+    Null deviance: 3.6454e+04  on 26295  degrees of freedom
+Residual deviance: 1.1741e-03  on 26274  degrees of freedom
+AIC: 44.001
+
+Number of Fisher Scoring iterations: 25</code></pre>
+</div>
+</div>
+<p>Oh wow that’s pretty sad…I think I did not select the greatest dataset here. Nevertheless, we should plot some visuals.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>normalized_data<span class="sc">$</span>predicted_prob <span class="ot">&lt;-</span> <span class="fu">predict</span>(log_reg, <span class="at">type =</span> <span class="st">"response"</span>)</span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(normalized_data, <span class="fu">aes</span>(<span class="at">x =</span> predicted_prob, <span class="at">fill =</span> <span class="fu">as.factor</span>(Preference))) <span class="sc">+</span></span>
+<span id="cb43-4"><a href="#cb43-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_histogram</span>(<span class="at">binwidth =</span> <span class="fl">0.05</span>, <span class="at">position =</span> <span class="st">"identity"</span>, <span class="at">alpha =</span> <span class="fl">0.6</span>) <span class="sc">+</span></span>
+<span id="cb43-5"><a href="#cb43-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Predicted Probability Distribution by Preference"</span>,</span>
+<span id="cb43-6"><a href="#cb43-6" aria-hidden="true" tabindex="-1"></a>         <span class="at">x =</span> <span class="st">"Predicted Probability"</span>, <span class="at">y =</span> <span class="st">"Count"</span>, <span class="at">fill =</span> <span class="st">"Preference"</span>) <span class="sc">+</span></span>
+<span id="cb43-7"><a href="#cb43-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">theme_minimal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="example_analysis_files/figure-html/unnamed-chunk-16-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(pROC)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Type 'citation("pROC")' for a citation.</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>
+Attaching package: 'pROC'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following objects are masked from 'package:stats':
+
+    cov, smooth, var</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a>roc_obj <span class="ot">&lt;-</span> <span class="fu">roc</span>(normalized_data<span class="sc">$</span>Preference, normalized_data<span class="sc">$</span>predicted_prob)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Setting levels: control = 0, case = 1</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Setting direction: controls &lt; cases</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb51"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(<span class="at">data =</span> <span class="fu">data.frame</span>(<span class="at">tpr =</span> roc_obj<span class="sc">$</span>sensitivities, <span class="at">fpr =</span> <span class="dv">1</span> <span class="sc">-</span> roc_obj<span class="sc">$</span>specificities), <span class="fu">aes</span>(<span class="at">x =</span> fpr, <span class="at">y =</span> tpr)) <span class="sc">+</span></span>
+<span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_line</span>(<span class="at">color =</span> <span class="st">"blue"</span>) <span class="sc">+</span></span>
+<span id="cb51-3"><a href="#cb51-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_abline</span>(<span class="at">linetype =</span> <span class="st">"dashed"</span>) <span class="sc">+</span></span>
+<span id="cb51-4"><a href="#cb51-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"ROC Curve"</span>, <span class="at">x =</span> <span class="st">"False Positive Rate"</span>, <span class="at">y =</span> <span class="st">"True Positive Rate"</span>) <span class="sc">+</span></span>
+<span id="cb51-5"><a href="#cb51-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">theme_minimal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="example_analysis_files/figure-html/unnamed-chunk-17-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb52"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a>threshold <span class="ot">&lt;-</span> <span class="fl">0.5</span></span>
+<span id="cb52-2"><a href="#cb52-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb52-3"><a href="#cb52-3" aria-hidden="true" tabindex="-1"></a>normalized_data<span class="sc">$</span>predicted_class <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(normalized_data<span class="sc">$</span>predicted_prob <span class="sc">&gt;</span> threshold, <span class="dv">1</span>, <span class="dv">0</span>)</span>
+<span id="cb52-4"><a href="#cb52-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb52-5"><a href="#cb52-5" aria-hidden="true" tabindex="-1"></a>zero_one_loss <span class="ot">&lt;-</span> <span class="fu">sum</span>(normalized_data<span class="sc">$</span>predicted_class <span class="sc">!=</span> normalized_data<span class="sc">$</span>Preference)</span>
+<span id="cb52-6"><a href="#cb52-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb52-7"><a href="#cb52-7" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">'the zero one loss for our training set is:'</span>, zero_one_loss, <span class="st">'</span><span class="sc">\n</span><span class="st">'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>the zero one loss for our training set is: 0 </code></pre>
+</div>
+</div>
 </section>
 </section>
 <section id="conclusion" class="level1">
 <h1>Conclusion</h1>
 <section id="summary" class="level2">
 <h2 class="anchored" data-anchor-id="summary">Summary</h2>
+<p>We can see that our logistic regression was able to perfectly predict the preferences for our training data. This is pretty worthless because the error on the training data greatly underestimates the true error of our prediction function, and I did not save a test set because my goal was to identify which variables were the most important in influencing someone’s preference of mountains or beaches. Unfortunately, I can’t really accomplish that because none of the coefficients were statistically significant, which we can see in the summary of the coefficients. The P values are all greater than 0.5 (which is much too high). We can make some conclusions based on the size of the coefficients themselves, however. For example, large coefficients such as swimming and sunbathing as preferred activities make sense (-7.039e+03 and -7.038e+03). It also makes sense that factors such as education and gender are very insignificant predictors.</p>
 </section>
 <section id="packages-used" class="level2">
 <h2 class="anchored" data-anchor-id="packages-used">Packages Used</h2>
+<p>Dplyr: * select * where * across * mutate * n_distinct * everything</p>
+<p>ggplot2: * geom_histogram * geom_bar * geom_line * geom_abline</p>
 
 
 </section>
