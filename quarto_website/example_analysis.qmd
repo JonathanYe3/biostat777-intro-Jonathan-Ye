@@ -27,8 +27,16 @@ https://www.kaggle.com/datasets/jahnavipaliwal/mountains-vs-beaches-preference
 
 I have moved the file to the data folder
 
-## Data Dictionary
+```{r}
+data = read.csv('data/mountains_vs_beaches_preferences.csv')
+cat('there are', nrow(data), "participatns, and", ncol(data) - 1, "predictors")
+```
 
+## Data Dictionary
+```{r}
+data_dictionary = read.csv('data/data_dictionary.csv')
+knitr::kable(data_dictionary)
+```
 
 
 # Analysis
@@ -37,22 +45,55 @@ The actual analysis starts here. I want to use logistic regression to predict th
 ## Data wrangling/Preprocessing
 Here are the assumptions:
 
-* Binary Outcome Variable: Logistic regression is used for binary classification, so your dependent variable should be binary (e.g., 0 or 1, True or False).
+* Binary Outcome Variable: Logistic regression is used for binary classification, so the dependent variable should be binary (e.g., 0 or 1, True or False).
+
+This assumption is met by our dataset.
 
 * Independence of Observations: The observations should be independent of each other. No observation should influence another.
 
+This assumption should be met, based on how the data was collected. Hopefully the participants are from different families.
+
 * No Perfect Multicollinearity: The predictor variables should not be perfectly correlated with each other. High multicollinearity can make it difficult to determine the individual effect of each predictor.
 
-* Large Sample Size: Logistic regression requires a sufficiently large sample size to produce reliable results. As a rule of thumb, you should have at least 10-20 cases per predictor variable.
+We will need to check this assumption.
 
-* No Significant Outliers: Outliers can unduly influence the model. It’s important to check for and potentially address outliers in your data.
+* Large Sample Size: Logistic regression requires a sufficiently large sample size to produce reliable results.
+
+With a sample size of 5244 and 13 predictors, this assumption is more than met. In fact, we can even consider adding a couple of features from nonlinear combinations of our original 13 predictors, and still be fine.
+
+* No Significant Outliers: Outliers can influence the model, since Logistic regression minimizes a loss function - and outliers introduce too much loss that the model can try to correct for.
+
+We will need to check this assumption.
 
 * Observations Need to be Properly Distributed Across the Levels of the Dependent Variable: There should be a reasonable number of cases in both categories of the dependent variable. Extreme imbalances can lead to a biased model.
 
+We will need to check this assumption.
+
 FIND A SOURCE FOR THIS: https://www.statisticssolutions.com/free-resources/directory-of-statistical-analyses/assumptions-of-logistic-regression/
 
+### Multicollinearity
+We will plot all of the pairwise correlations in a correlation matrix. In our cases, we will remove a variable if there is a correlation of 0.9 or higher, which is essentially perfectly correlated in practice.
+
+```{r}
 
 
+```
+
+### Outlier Analysis
+Outliers only apply to our numerical variables, such as Age, Income, Travel_Frequency, Vacation_Budget, Proximity_to_Mountains, Proximity_to_Beaches. We will identify outliers as having $|value - median| > 1.5 \cdot IQR$ where IQR is the interquartile range. 
+
+```{r}
+
+
+```
+
+### Observation distributions
+We need to ensure that we have an approximately equal number of mountain and beach enjoyers. Something in the neighborhood of 50-50 would be preferred.
+
+
+### Feature Engineering
+
+## Logistic Regression
 
 # Conclusion
 

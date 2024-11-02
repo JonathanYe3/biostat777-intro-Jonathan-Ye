@@ -4,20 +4,62 @@
     "href": "index.html",
     "title": "Home",
     "section": "",
-    "text": "Hello, I am Jonathan Ye\nI am an undergraduate senior studying Public Health and Applied Mathematics + Statistics at Homewood. As a child, I enjoyed playing outside and collecting rocks. Here is a picture of me that I use for my Linkedin, and other things.\n{width = 50%}"
+    "text": "Hello, I am Jonathan Ye\nI am an undergraduate senior studying Public Health and Applied Mathematics + Statistics at Homewood. As a child, I enjoyed playing outside and collecting rocks. Here is a picture of me that I use for my Linkedin, and other things.\n{width = 200}"
   },
   {
     "objectID": "about.html",
     "href": "about.html",
     "title": "About",
     "section": "",
-    "text": "About this site"
+    "text": "In greater detail, I am a student who enjoys learning new math and coding sometimes. Public health is interesting, I think it is good to think about research in the context of things that matter a great deal to the general population. I think researchers and scientists tend to only focus on their research/science, and neglect other factors that are also important to consider. For example, I hear a lot of people say that policymakers should just do what science tells them to do, but there are several other things to keep in mind. Feasibility, budget, ethics, and much more are also important.\nI am currently applying to graduate schools for PhD and also industry jobs, because I would like to have options of what to do next after undergrad. I am interested primarily in the health sector because I think it could be fulfilling, and am looking for data science jobs because that’s where most of my skills lie. I lack in biology/chemistry knowledge (definitely in terms of coursework) so I am hoping to get hired based on technological skillset."
   },
   {
     "objectID": "example_analysis.html",
     "href": "example_analysis.html",
     "title": "Example Analysis",
     "section": "",
-    "text": "print(mean(1:5))\n\n[1] 3"
+    "text": "Here, I will outline my goals for this analysis, load the data, preprocess it, share the data dictionary, etc.\n\n\nAre there any characteristics that can help us predict whether a given person prefers mountains or beaches? (i.e. could we predict the answer to the question ‘are you a mountain or a beach person’)\n\n\n\nThe intended audience is anyone who feels strongly about mountains or beaches.\n\n\n\nhttps://www.kaggle.com/datasets/jahnavipaliwal/mountains-vs-beaches-preference\n\n# import kagglehub\n\n# # Download latest version\n# path = kagglehub.dataset_download(\"jahnavipaliwal/mountains-vs-beaches-preference\")\n\n# print(\"Path to dataset files:\", path)\n\nI have moved the file to the data folder"
+  },
+  {
+    "objectID": "example_analysis.html#guiding-question",
+    "href": "example_analysis.html#guiding-question",
+    "title": "Example Analysis",
+    "section": "",
+    "text": "Are there any characteristics that can help us predict whether a given person prefers mountains or beaches? (i.e. could we predict the answer to the question ‘are you a mountain or a beach person’)"
+  },
+  {
+    "objectID": "example_analysis.html#intended-audience",
+    "href": "example_analysis.html#intended-audience",
+    "title": "Example Analysis",
+    "section": "",
+    "text": "The intended audience is anyone who feels strongly about mountains or beaches."
+  },
+  {
+    "objectID": "example_analysis.html#link-to-data",
+    "href": "example_analysis.html#link-to-data",
+    "title": "Example Analysis",
+    "section": "",
+    "text": "https://www.kaggle.com/datasets/jahnavipaliwal/mountains-vs-beaches-preference\n\n# import kagglehub\n\n# # Download latest version\n# path = kagglehub.dataset_download(\"jahnavipaliwal/mountains-vs-beaches-preference\")\n\n# print(\"Path to dataset files:\", path)\n\nI have moved the file to the data folder"
+  },
+  {
+    "objectID": "example_analysis.html#data-wranglingpreprocessing",
+    "href": "example_analysis.html#data-wranglingpreprocessing",
+    "title": "Example Analysis",
+    "section": "Data wrangling/Preprocessing",
+    "text": "Data wrangling/Preprocessing\nHere are the assumptions:\n\nBinary Outcome Variable: Logistic regression is used for binary classification, so your dependent variable should be binary (e.g., 0 or 1, True or False).\nIndependence of Observations: The observations should be independent of each other. No observation should influence another.\nNo Perfect Multicollinearity: The predictor variables should not be perfectly correlated with each other. High multicollinearity can make it difficult to determine the individual effect of each predictor.\nLarge Sample Size: Logistic regression requires a sufficiently large sample size to produce reliable results. As a rule of thumb, you should have at least 10-20 cases per predictor variable.\nNo Significant Outliers: Outliers can unduly influence the model. It’s important to check for and potentially address outliers in your data.\nObservations Need to be Properly Distributed Across the Levels of the Dependent Variable: There should be a reasonable number of cases in both categories of the dependent variable. Extreme imbalances can lead to a biased model.\n\nFIND A SOURCE FOR THIS: https://www.statisticssolutions.com/free-resources/directory-of-statistical-analyses/assumptions-of-logistic-regression/"
+  },
+  {
+    "objectID": "example_analysis.html#summary",
+    "href": "example_analysis.html#summary",
+    "title": "Example Analysis",
+    "section": "Summary",
+    "text": "Summary"
+  },
+  {
+    "objectID": "example_analysis.html#packages-used",
+    "href": "example_analysis.html#packages-used",
+    "title": "Example Analysis",
+    "section": "Packages Used",
+    "text": "Packages Used"
   }
 ]

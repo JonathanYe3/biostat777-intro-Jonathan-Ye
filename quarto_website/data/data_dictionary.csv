@@ -1,0 +1,15 @@
+variables,type,description
+Age,integer,Age of the individual (numerical).
+Gender,character,"Gender identity of the individual (categorical: male, female, non-binary)."
+Income,integer,Annual income of the individual (numerical).
+Education_Level,character,"Highest level of education attained (categorical: high school, bachelor, master, doctorate)."
+Travel_Frequency,integer,Number of vacations taken per year (numerical).
+Preferred_Activities,character,"Activities preferred by individuals during vacations (categorical: hiking, swimming, skiing, sunbathing)."
+Vacation_Budget,integer,Budget allocated for vacations (numerical).
+Location,character,"Type of residence (categorical: urban, suburban, rural)."
+Proximity_to_Mountains,integer,"Distance from the nearest mountains (numerical, in miles)."
+Proximity_to_Beaches,integer,"Distance from the nearest beaches (numerical, in miles)."
+Favorite_Season,character,"Preferred season for vacations (categorical: summer, winter, spring, fall)."
+Pets,integer,"Indicates whether the individual owns pets (binary: 0 = No, 1 = Yes)."
+Environmental_Concerns,integer,"Indicates whether the individual has environmental concerns (binary: 0 = No, 1 = Yes)."
+Preference,integer,"Indicates whether the individual prefers mountains or beaches (binary: 0 = beaches, 1 = mountains)"
