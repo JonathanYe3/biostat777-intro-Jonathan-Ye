@@ -237,6 +237,8 @@ window.Quarto = {
 <section id="intended-audience" class="level2">
 <h2 class="anchored" data-anchor-id="intended-audience">Intended Audience</h2>
 <p>The intended audience is anyone who feels strongly about mountains or beaches.</p>
+<p><img src="figs/beach_mountain.jpg" class="img-fluid" style="width:80.0%"></p>
+<p>Check out these mountains next to a beach. How could you decide?</p>
 </section>
 <section id="link-to-data" class="level2">
 <h2 class="anchored" data-anchor-id="link-to-data">Link to Data</h2>
@@ -690,19 +692,19 @@ Number of beach enjoyers: 13148 </code></pre>
 5       male     high school               hiking suburban            fall    0
 6     female          master               skiing    urban            fall    1
   Environmental_Concerns Preference        Age      Income Travel_Frequency
-1                      1          1  0.8335188  0.05165296        1.5727022
-2                      0          1  0.1685589 -0.81223124       -1.5531018
-3                      0          1 -0.7623851  1.00749064        0.5307675
-4                      1          1 -0.1639211 -0.59614750        0.8780791
-5                      0          1  0.9000148 -0.14511777       -0.5111672
-6                      1          1 -0.1639211  1.03405036       -0.8584787
+1                      1          1  0.8320239  0.05233121        1.5711838
+2                      0          1  0.1648052 -0.81250781       -1.5655376
+3                      0          1 -0.7693008  1.00922535        0.5256100
+4                      1          1 -0.1688041 -0.59618524        0.8741346
+5                      0          1  0.8987457 -0.14465701       -0.5199638
+6                      1          1 -0.1688041  1.03581442       -0.8684884
   Vacation_Budget Proximity_to_Mountains Proximity_to_Beaches
-1     -0.19860229              0.4854889            1.1911456
-2     -0.97430620             -0.7392984            1.3444578
-3     -0.96430208             -1.2103704            1.0496267
-4     -0.88042140             -0.0444671            1.0378335
-5     -0.09856111             -1.1514864            1.0850064
-6      0.07304799             -0.6686375            0.5071374</code></pre>
+1     -0.20029233             0.49358718            1.1864101
+2     -0.97974101            -0.73216912            1.3402106
+3     -0.96968860            -1.20361385            1.0444405
+4     -0.88540297            -0.03678814            1.0326097
+5     -0.09976819            -1.14468326            1.0799329
+6      0.07266936            -0.66145241            0.5002235</code></pre>
 </div>
 </div>
 <p>Now, need to convert this subset of the data into factors where appropriate</p>
@@ -726,12 +728,12 @@ Number of beach enjoyers: 13148 </code></pre>
  $ Pets                  : int  0 0 1 1 0 1 0 1 0 1 ...
  $ Environmental_Concerns: int  1 0 0 1 0 1 1 0 0 0 ...
  $ Preference            : int  1 1 1 1 1 1 1 1 1 1 ...
- $ Age                   : num  0.834 0.169 -0.762 -0.164 0.9 ...
- $ Income                : num  0.0517 -0.8122 1.0075 -0.5961 -0.1451 ...
- $ Travel_Frequency      : num  1.573 -1.553 0.531 0.878 -0.511 ...
- $ Vacation_Budget       : num  -0.1986 -0.9743 -0.9643 -0.8804 -0.0986 ...
- $ Proximity_to_Mountains: num  0.4855 -0.7393 -1.2104 -0.0445 -1.1515 ...
- $ Proximity_to_Beaches  : num  1.19 1.34 1.05 1.04 1.09 ...</code></pre>
+ $ Age                   : num  0.832 0.165 -0.769 -0.169 0.899 ...
+ $ Income                : num  0.0523 -0.8125 1.0092 -0.5962 -0.1447 ...
+ $ Travel_Frequency      : num  1.571 -1.566 0.526 0.874 -0.52 ...
+ $ Vacation_Budget       : num  -0.2003 -0.9797 -0.9697 -0.8854 -0.0998 ...
+ $ Proximity_to_Mountains: num  0.4936 -0.7322 -1.2036 -0.0368 -1.1447 ...
+ $ Proximity_to_Beaches  : num  1.19 1.34 1.04 1.03 1.08 ...</code></pre>
 </div>
 </div>
 <div class="cell">
@@ -773,33 +775,33 @@ glm(formula = Preference ~ ., family = "binomial", data = normalized_data)
 
 Coefficients:
                                  Estimate Std. Error z value Pr(&gt;|z|)
-(Intercept)                     7.599e+02  1.604e+03   0.474    0.636
-Gendermale                      3.800e-02  7.535e+01   0.001    1.000
-Gendernon-binary               -3.835e-01  6.237e+01  -0.006    0.995
-Education_Level.L              -2.664e-01  6.523e+01  -0.004    0.997
-Education_Level.Q               2.784e-01  5.816e+01   0.005    0.996
-Education_Level.C              -9.927e-02  5.301e+01  -0.002    0.999
-Preferred_Activitiesskiing     -2.788e-01  5.568e+01  -0.005    0.996
-Preferred_Activitiessunbathing -7.060e+03  1.494e+04  -0.473    0.636
-Preferred_Activitiesswimming   -7.013e+03  1.485e+04  -0.472    0.637
-Locationsuburban                7.322e-03  7.350e+01   0.000    1.000
-Locationurban                  -1.682e-01  6.740e+01  -0.002    0.998
-Favorite_Seasonspring          -4.699e-01  7.560e+01  -0.006    0.995
-Favorite_Seasonsummer           2.724e-02  8.241e+01   0.000    1.000
-Favorite_Seasonwinter          -2.950e-01  7.672e+01  -0.004    0.997
-Pets                            3.408e-01  5.620e+01   0.006    0.995
-Environmental_Concerns         -2.544e-01  5.496e+01  -0.005    0.996
-Age                             2.378e-02  3.027e+01   0.001    0.999
-Income                          1.696e-01  2.876e+01   0.006    0.995
-Travel_Frequency               -1.095e-01  2.777e+01  -0.004    0.997
-Vacation_Budget                 1.225e-01  2.843e+01   0.004    0.997
-Proximity_to_Mountains         -2.031e+03  4.283e+03  -0.474    0.635
-Proximity_to_Beaches            2.028e+03  4.277e+03   0.474    0.635
+(Intercept)                     7.980e+02  1.684e+03   0.474    0.636
+Gendermale                      8.936e-02  7.218e+01   0.001    0.999
+Gendernon-binary                3.970e-01  6.739e+01   0.006    0.995
+Education_Level.L              -3.071e-01  6.354e+01  -0.005    0.996
+Education_Level.Q               7.364e-02  5.803e+01   0.001    0.999
+Education_Level.C              -8.440e-02  5.498e+01  -0.002    0.999
+Preferred_Activitiesskiing     -3.996e-01  5.970e+01  -0.007    0.995
+Preferred_Activitiessunbathing -7.038e+03  1.491e+04  -0.472    0.637
+Preferred_Activitiesswimming   -7.111e+03  1.506e+04  -0.472    0.637
+Locationsuburban               -1.909e-01  6.715e+01  -0.003    0.998
+Locationurban                  -2.248e-01  6.897e+01  -0.003    0.997
+Favorite_Seasonspring          -3.175e-01  7.446e+01  -0.004    0.997
+Favorite_Seasonsummer           3.329e-01  9.048e+01   0.004    0.997
+Favorite_Seasonwinter          -5.673e-02  7.383e+01  -0.001    0.999
+Pets                            4.011e-01  5.770e+01   0.007    0.994
+Environmental_Concerns         -3.239e-01  5.494e+01  -0.006    0.995
+Age                            -1.037e-01  2.929e+01  -0.004    0.997
+Income                          8.309e-02  2.927e+01   0.003    0.998
+Travel_Frequency                9.272e-02  2.752e+01   0.003    0.997
+Vacation_Budget                -1.164e-01  2.729e+01  -0.004    0.997
+Proximity_to_Mountains         -2.044e+03  4.313e+03  -0.474    0.636
+Proximity_to_Beaches            2.036e+03  4.298e+03   0.474    0.636
 
 (Dispersion parameter for binomial family taken to be 1)
 
     Null deviance: 3.6454e+04  on 26295  degrees of freedom
-Residual deviance: 1.1652e-03  on 26274  degrees of freedom
+Residual deviance: 1.1439e-03  on 26274  degrees of freedom
 AIC: 44.001
 
 Number of Fisher Scoring iterations: 25</code></pre>

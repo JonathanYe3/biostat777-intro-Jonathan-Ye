@@ -12,6 +12,10 @@ Are there any characteristics that can help us predict whether a given person pr
 ## Intended Audience
 The intended audience is anyone who feels strongly about mountains or beaches.
 
+![](figs/beach_mountain.jpg){ width=80% }
+
+Check out these mountains next to a beach. How could you decide?
+
 ## Link to Data
 https://www.kaggle.com/datasets/jahnavipaliwal/mountains-vs-beaches-preference
 
