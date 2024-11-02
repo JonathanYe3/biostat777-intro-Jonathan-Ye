@@ -73,7 +73,7 @@ We will need to check this assumption.
 
 We will need to check this assumption.
 
-FIND A SOURCE FOR THIS: https://www.statisticssolutions.com/free-resources/directory-of-statistical-analyses/assumptions-of-logistic-regression/
+https://www.statisticssolutions.com/free-resources/directory-of-statistical-analyses/assumptions-of-logistic-regression/
 
 ```{r}
 features = dplyr::select(data, -Preference)
@@ -111,13 +111,13 @@ We see that none of our variables are perfectly correlated, so this is great!
 
 ### Outlier Analysis
 Outliers only apply to our numerical variables, such as Age, Income, Travel_Frequency, Vacation_Budget, Proximity_to_Mountains, Proximity_to_Beaches. 
+
 ::: {.column-margin}
 We will identify values as outliers if they meet the condition: 
-
 $$|value - median| > 1.5 \cdot IQR$$
-
 where IQR is the interquartile range. 
 :::
+
 
 First, it may help us to just look at the distributions of the numerical variables - I will plot histograms separately because of bin width issues.
 
@@ -265,7 +265,7 @@ long_data <- numeric_features %>%
 ggplot(long_data, aes(x = value)) +
     geom_histogram(binwidth = 0.5, fill = "steelblue", color = "white") +
     facet_wrap(~variable, scales = "free") +
-    labs(title = "Histograms of Numeric Features", x = "Value", y = "Frequency")
+    labs(title = "Histograms of Numeric Features", x = "Value", y = "Frequency", caption = "Facet plot for the normalized distributions") + theme(plot.caption = element_text(hjust = 0.5))
 
 ```
 
@@ -321,15 +321,25 @@ We can see that our logistic regression was able to perfectly predict the prefer
 
 ## Packages Used
 Dplyr:
+
 * select
+
 * where
+
 * across
+
 * mutate
+
 * n_distinct
+
 * everything
 
 ggplot2:
+
 * geom_histogram
+
 * geom_bar
+
 * geom_line
+
 * geom_abline

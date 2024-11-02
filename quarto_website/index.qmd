@@ -5,4 +5,4 @@ title: "Home"
 # Hello, I am Jonathan Ye
 I am an undergraduate senior studying Public Health and Applied Mathematics + Statistics at Homewood. As a child, I enjoyed playing outside and collecting rocks. Here is a picture of me that I use for my Linkedin, and other things.
 
-![Headshot](figs/headshot.jpg){width = 200}
+![](figs/headshot.jpg){ width=300 }
