@@ -1,6 +1,8 @@
 ---
 title: "Example Analysis"
 format: html
+bibliography: refs.bib
+nocite: '@*'
 ---
 
 # Setup
@@ -17,7 +19,7 @@ The intended audience is anyone who feels strongly about mountains or beaches.
 Check out these mountains next to a beach. How could you decide?
 
 ## Link to Data
-https://www.kaggle.com/datasets/jahnavipaliwal/mountains-vs-beaches-preference
+Citation: [@paliwal2024]
 
 ```{python}
 # import kagglehub
@@ -77,7 +79,7 @@ We will need to check this assumption.
 
 We will need to check this assumption.
 
-https://www.statisticssolutions.com/free-resources/directory-of-statistical-analyses/assumptions-of-logistic-regression/
+[@statsolutions2024]
 
 ```{r}
 features = dplyr::select(data, -Preference)
@@ -229,7 +231,7 @@ print(pie_data)
 
 
 ### Feature Engineering
-Normalizing the data is generally a good thing to do. Not super necessary here, but I will do it anyways. https://www.turing.com/kb/effects-of-normalization-techniques-on-logistic-regression-in-data-science
+Normalizing the data is generally a good thing to do. Not super necessary here, but I will do it anyways. [@turing2024] for reference
 
 ```{r}
 normalized_data <- balanced_data %>%
